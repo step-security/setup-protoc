@@ -35,7 +35,6 @@ on:
     # Run every Tuesday at 8 AM UTC to catch breakage caused by external changes.
     - cron: "0 8 * * TUE"
   workflow_dispatch:
-  repository_dispatch:
 
 jobs:
   run-determination:

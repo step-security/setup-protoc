@@ -24,7 +24,6 @@ on:
       - "tsconfig.json"
       - "**.[jt]sx?"
   workflow_dispatch:
-  repository_dispatch:
 
 jobs:
   check-packaging:
