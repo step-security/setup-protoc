@@ -23,8 +23,12 @@ on:
     - cron: "0 8 * * TUE"
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   validate:
+    permissions:
+      contents: read  # for actions/checkout to fetch code
     name: Validate ${{ matrix.file }}
     runs-on: ubuntu-latest
 
@@ -36,17 +40,22 @@ jobs:
           - ./**/Taskfile.yml
 
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Download JSON schema for Taskfiles
         id: download-schema
-        uses: carlosperate/download-file-action@v2
+        uses: carlosperate/download-file-action@3ec6fcef61e19eaaa0236a95fbaf333f2baf341e # v2.0.2
         with:
           # Source: https://github.com/SchemaStore/schemastore/blob/master/src/schemas/json/taskfile.json
           file-url: https://taskfile.dev/schema.json
