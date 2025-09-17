@@ -33,6 +33,11 @@ jobs:
     outputs:
       result: ${{ steps.determination.outputs.result }}
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
       - name: Determine if the rest of the workflow should run
         id: determination
         run: |
@@ -57,16 +62,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install Task
-        uses: arduino/setup-task@v1
+        uses: arduino/setup-task@e26d8975574116b0097a1161e0fe16ba75d84c1c # v1.0.3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           version: 3.x
@@ -80,16 +90,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install Task
-        uses: arduino/setup-task@v1
+        uses: arduino/setup-task@e26d8975574116b0097a1161e0fe16ba75d84c1c # v1.0.3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           version: 3.x

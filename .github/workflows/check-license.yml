@@ -30,12 +30,21 @@ on:
     - cron: "0 6 * * WED"
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   run-determination:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       result: ${{ steps.determination.outputs.result }}
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
       - name: Determine if the rest of the workflow should run
         id: determination
         run: |
@@ -55,16 +64,23 @@ jobs:
           echo "result=$RESULT" >> $GITHUB_OUTPUT
 
   check-license:
+    permissions:
+      contents: read  # for actions/checkout to fetch code
     needs: run-determination
     if: needs.run-determination.outputs.result == 'true'
     runs-on: ubuntu-latest
 
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Install Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@3fee6763234110473bd57dd4595c5199fce2c510 # v1.258.0
         with:
           ruby-version: ruby # Install latest version
 
