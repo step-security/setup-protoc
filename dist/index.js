@@ -6502,6 +6502,24 @@ module.exports = $reflectApply || bind.call($call, $apply);
 
 /***/ }),
 
+/***/ 6002:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var bind = __nccwpck_require__(7564);
+var $apply = __nccwpck_require__(3945);
+var actualApply = __nccwpck_require__(2639);
+
+/** @type {import('./applyBind')} */
+module.exports = function applyBind() {
+	return actualApply(bind, $apply, arguments);
+};
+
+
+/***/ }),
+
 /***/ 3945:
 /***/ ((module) => {
 
@@ -6590,41 +6608,21 @@ module.exports = function callBoundIntrinsic(name, allowMissing) {
 "use strict";
 
 
-var bind = __nccwpck_require__(7564);
-var GetIntrinsic = __nccwpck_require__(470);
 var setFunctionLength = __nccwpck_require__(9346);
 
-var $TypeError = GetIntrinsic('%TypeError%');
-var $apply = GetIntrinsic('%Function.prototype.apply%');
-var $call = GetIntrinsic('%Function.prototype.call%');
-var $reflectApply = GetIntrinsic('%Reflect.apply%', true) || bind.call($call, $apply);
+var $defineProperty = __nccwpck_require__(9094);
 
-var $defineProperty = GetIntrinsic('%Object.defineProperty%', true);
-var $max = GetIntrinsic('%Math.max%');
-
-if ($defineProperty) {
-	try {
-		$defineProperty({}, 'a', { value: 1 });
-	} catch (e) {
-		// IE 8 has a broken defineProperty
-		$defineProperty = null;
-	}
-}
+var callBindBasic = __nccwpck_require__(8705);
+var applyBind = __nccwpck_require__(6002);
 
 module.exports = function callBind(originalFunction) {
-	if (typeof originalFunction !== 'function') {
-		throw new $TypeError('a function is required');
-	}
-	var func = $reflectApply(bind, $call, arguments);
+	var func = callBindBasic(arguments);
+	var adjustedLength = originalFunction.length - (arguments.length - 1);
 	return setFunctionLength(
 		func,
-		1 + $max(0, originalFunction.length - (arguments.length - 1)),
+		1 + (adjustedLength > 0 ? adjustedLength : 0),
 		true
 	);
-};
-
-var applyBind = function applyBind() {
-	return $reflectApply(bind, $apply, arguments);
 };
 
 if ($defineProperty) {
@@ -7701,26 +7699,14 @@ formatters.O = function (v) {
 "use strict";
 
 
-var hasPropertyDescriptors = __nccwpck_require__(497)();
+var $defineProperty = __nccwpck_require__(9094);
 
-var GetIntrinsic = __nccwpck_require__(470);
-
-var $defineProperty = hasPropertyDescriptors && GetIntrinsic('%Object.defineProperty%', true);
-if ($defineProperty) {
-	try {
-		$defineProperty({}, 'a', { value: 1 });
-	} catch (e) {
-		// IE 8 has a broken defineProperty
-		$defineProperty = false;
-	}
-}
-
-var $SyntaxError = GetIntrinsic('%SyntaxError%');
-var $TypeError = GetIntrinsic('%TypeError%');
+var $SyntaxError = __nccwpck_require__(105);
+var $TypeError = __nccwpck_require__(3314);
 
 var gopd = __nccwpck_require__(3170);
 
-/** @type {(obj: Record<PropertyKey, unknown>, property: PropertyKey, value: unknown, nonEnumerable?: boolean | null, nonWritable?: boolean | null, nonConfigurable?: boolean | null, loose?: boolean) => void} */
+/** @type {import('.')} */
 module.exports = function defineDataProperty(
 	obj,
 	property,
@@ -9928,26 +9914,15 @@ module.exports = (flag, argv = process.argv) => {
 "use strict";
 
 
-var GetIntrinsic = __nccwpck_require__(470);
-
-var $defineProperty = GetIntrinsic('%Object.defineProperty%', true);
+var $defineProperty = __nccwpck_require__(9094);
 
 var hasPropertyDescriptors = function hasPropertyDescriptors() {
-	if ($defineProperty) {
-		try {
-			$defineProperty({}, 'a', { value: 1 });
-			return true;
-		} catch (e) {
-			// IE 8 has a broken defineProperty
-			return false;
-		}
-	}
-	return false;
+	return !!$defineProperty;
 };
 
 hasPropertyDescriptors.hasArrayLengthDefineBug = function hasArrayLengthDefineBug() {
 	// node v0.6 has a bug where array lengths can be Set but not Defined
-	if (!hasPropertyDescriptors()) {
+	if (!$defineProperty) {
 		return null;
 	}
 	try {
@@ -13940,12 +13915,10 @@ var define = __nccwpck_require__(1316);
 var hasDescriptors = __nccwpck_require__(497)();
 var gOPD = __nccwpck_require__(3170);
 
-var $TypeError = GetIntrinsic('%TypeError%');
+var $TypeError = __nccwpck_require__(3314);
 var $floor = GetIntrinsic('%Math.floor%');
 
-/** @typedef {(...args: unknown[]) => unknown} Func */
-
-/** @type {<T extends Func = Func>(fn: T, length: number, loose?: boolean) => T} */
+/** @type {import('.')} */
 module.exports = function setFunctionLength(fn, length) {
 	if (typeof fn !== 'function') {
 		throw new $TypeError('`fn` is not a function');
