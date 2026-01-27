@@ -1,16 +1,16 @@
 ---
-name: set-function-length
-version: 1.2.0
+name: side-channel-list
+version: 1.0.0
 type: npm
-summary: Set a function's length property
-homepage: https://github.com/ljharb/set-function-length#readme
+summary: Store information about any JS value in a side channel, using a linked list
+homepage: https://github.com/ljharb/side-channel-list#readme
 license: mit
 licenses:
 - sources: LICENSE
   text: |
     MIT License
 
-    Copyright (c) Jordan Harband and contributors
+    Copyright (c) 2024 Jordan Harband
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
