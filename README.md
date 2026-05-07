@@ -1,3 +1,5 @@
+[![StepSecurity Maintained Action](https://raw.githubusercontent.com/step-security/maintained-actions-assets/main/assets/maintained-action-banner.png)](https://docs.stepsecurity.io/actions/stepsecurity-maintained-actions)
+
 # setup-protoc
 
 [![Check npm Dependencies status](https://github.com/step-security/setup-protoc/actions/workflows/check-npm-dependencies-task.yml/badge.svg)](https://github.com/step-security/setup-protoc/actions/workflows/check-npm-dependencies-task.yml)

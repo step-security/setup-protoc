@@ -29,15 +29,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getFileName = exports.getProtoc = void 0;
 // Load tempDirectory before it gets wiped by tool-cache
@@ -69,52 +60,48 @@ const osPlat = os.platform();
 const osArch = os.arch();
 // This regex is slighty modified from https://semver.org/ to allow only MINOR.PATCH notation.
 const semverRegex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/gm;
-function getProtoc(version, includePreReleases, repoToken) {
-    return __awaiter(this, void 0, void 0, function* () {
-        // resolve the version number
-        const targetVersion = yield computeVersion(version, includePreReleases, repoToken);
-        if (targetVersion) {
-            version = targetVersion;
-        }
-        process.stdout.write("Getting protoc version: " + version + os.EOL);
-        // look if the binary is cached
-        let toolPath;
-        toolPath = tc.find("protoc", version);
-        // if not: download, extract and cache
-        if (!toolPath) {
-            toolPath = yield downloadRelease(version);
-            process.stdout.write("Protoc cached under " + toolPath + os.EOL);
-        }
-        // expose outputs
-        core.setOutput("path", toolPath);
-        core.setOutput("version", targetVersion);
-        // add the bin folder to the PATH
-        core.addPath(path.join(toolPath, "bin"));
-    });
+async function getProtoc(version, includePreReleases, repoToken) {
+    // resolve the version number
+    const targetVersion = await computeVersion(version, includePreReleases, repoToken);
+    if (targetVersion) {
+        version = targetVersion;
+    }
+    process.stdout.write("Getting protoc version: " + version + os.EOL);
+    // look if the binary is cached
+    let toolPath;
+    toolPath = tc.find("protoc", version);
+    // if not: download, extract and cache
+    if (!toolPath) {
+        toolPath = await downloadRelease(version);
+        process.stdout.write("Protoc cached under " + toolPath + os.EOL);
+    }
+    // expose outputs
+    core.setOutput("path", toolPath);
+    core.setOutput("version", targetVersion);
+    // add the bin folder to the PATH
+    core.addPath(path.join(toolPath, "bin"));
 }
 exports.getProtoc = getProtoc;
-function downloadRelease(version) {
-    return __awaiter(this, void 0, void 0, function* () {
-        // Download
-        const fileName = getFileName(version, osPlat, osArch);
-        const downloadUrl = util.format("https://github.com/protocolbuffers/protobuf/releases/download/%s/%s", version, fileName);
-        process.stdout.write("Downloading archive: " + downloadUrl + os.EOL);
-        let downloadPath = null;
-        try {
-            downloadPath = yield tc.downloadTool(downloadUrl);
+async function downloadRelease(version) {
+    // Download
+    const fileName = getFileName(version, osPlat, osArch);
+    const downloadUrl = util.format("https://github.com/protocolbuffers/protobuf/releases/download/%s/%s", version, fileName);
+    process.stdout.write("Downloading archive: " + downloadUrl + os.EOL);
+    let downloadPath = null;
+    try {
+        downloadPath = await tc.downloadTool(downloadUrl);
+    }
+    catch (err) {
+        if (err instanceof tc.HTTPError) {
+            core.debug(err.message);
+            throw new Error(`Failed to download version ${version}: ${err.name}, ${err.message} - ${err.httpStatusCode}`);
         }
-        catch (err) {
-            if (err instanceof tc.HTTPError) {
-                core.debug(err.message);
-                throw new Error(`Failed to download version ${version}: ${err.name}, ${err.message} - ${err.httpStatusCode}`);
-            }
-            throw new Error(`Failed to download version ${version}: ${err}`);
-        }
-        // Extract
-        const extPath = yield tc.extractZip(downloadPath);
-        // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
-        return tc.cacheDir(extPath, "protoc", version);
-    });
+        throw new Error(`Failed to download version ${version}: ${err}`);
+    }
+    // Extract
+    const extPath = await tc.extractZip(downloadPath);
+    // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
+    return tc.cacheDir(extPath, "protoc", version);
 }
 /**
  *
@@ -174,61 +161,57 @@ function getFileName(version, osPlatf, osArc) {
 }
 exports.getFileName = getFileName;
 // Retrieve a list of versions scraping tags from the Github API
-function fetchVersions(includePreReleases, repoToken) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let rest;
-        if (repoToken != "") {
-            rest = new restm.RestClient("setup-protoc", "", [], {
-                headers: { Authorization: "Bearer " + repoToken },
-            });
+async function fetchVersions(includePreReleases, repoToken) {
+    let rest;
+    if (repoToken != "") {
+        rest = new restm.RestClient("setup-protoc", "", [], {
+            headers: { Authorization: "Bearer " + repoToken },
+        });
+    }
+    else {
+        rest = new restm.RestClient("setup-protoc");
+    }
+    let tags = [];
+    for (let pageNum = 1, morePages = true; morePages; pageNum++) {
+        const p = await rest.get("https://api.github.com/repos/protocolbuffers/protobuf/releases?page=" +
+            pageNum);
+        const nextPage = p.result || [];
+        if (nextPage.length > 0) {
+            tags = tags.concat(nextPage);
         }
         else {
-            rest = new restm.RestClient("setup-protoc");
+            morePages = false;
         }
-        let tags = [];
-        for (let pageNum = 1, morePages = true; morePages; pageNum++) {
-            const p = yield rest.get("https://api.github.com/repos/protocolbuffers/protobuf/releases?page=" +
-                pageNum);
-            const nextPage = p.result || [];
-            if (nextPage.length > 0) {
-                tags = tags.concat(nextPage);
-            }
-            else {
-                morePages = false;
-            }
-        }
-        return tags
-            .filter((tag) => tag.tag_name.match(/v\d+\.[\w.]+/g))
-            .filter((tag) => includePrerelease(tag.prerelease, includePreReleases))
-            .map((tag) => tag.tag_name.replace("v", ""));
-    });
+    }
+    return tags
+        .filter((tag) => tag.tag_name.match(/v\d+\.[\w.]+/g))
+        .filter((tag) => includePrerelease(tag.prerelease, includePreReleases))
+        .map((tag) => tag.tag_name.replace("v", ""));
 }
 // Compute an actual version starting from the `version` configuration param.
-function computeVersion(version, includePreReleases, repoToken) {
-    return __awaiter(this, void 0, void 0, function* () {
-        // strip leading `v` char (will be re-added later)
-        if (version.startsWith("v")) {
-            version = version.slice(1, version.length);
-        }
-        // strip trailing .x chars
-        if (version.endsWith(".x")) {
-            version = version.slice(0, version.length - 2);
-        }
-        const allVersions = yield fetchVersions(includePreReleases, repoToken);
-        const validVersions = allVersions.filter((v) => v.match(semverRegex));
-        const possibleVersions = validVersions.filter((v) => v.startsWith(version));
-        const versionMap = new Map();
-        possibleVersions.forEach((v) => versionMap.set(normalizeVersion(v), v));
-        const versions = Array.from(versionMap.keys())
-            .sort(semver.rcompare)
-            .map((v) => versionMap.get(v));
-        core.debug(`evaluating ${versions.length} versions`);
-        if (versions.length === 0) {
-            throw new Error("unable to get latest version");
-        }
-        core.debug(`matched: ${versions[0]}`);
-        return "v" + versions[0];
-    });
+async function computeVersion(version, includePreReleases, repoToken) {
+    // strip leading `v` char (will be re-added later)
+    if (version.startsWith("v")) {
+        version = version.slice(1, version.length);
+    }
+    // strip trailing .x chars
+    if (version.endsWith(".x")) {
+        version = version.slice(0, version.length - 2);
+    }
+    const allVersions = await fetchVersions(includePreReleases, repoToken);
+    const validVersions = allVersions.filter((v) => v.match(semverRegex));
+    const possibleVersions = validVersions.filter((v) => v.startsWith(version));
+    const versionMap = new Map();
+    possibleVersions.forEach((v) => versionMap.set(normalizeVersion(v), v));
+    const versions = Array.from(versionMap.keys())
+        .sort(semver.rcompare)
+        .map((v) => versionMap.get(v));
+    core.debug(`evaluating ${versions.length} versions`);
+    if (versions.length === 0) {
+        throw new Error("unable to get latest version");
+    }
+    core.debug(`matched: ${versions[0]}`);
+    return "v" + versions[0];
 }
 // Make partial versions semver compliant.
 function normalizeVersion(version) {
@@ -290,50 +273,57 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(7484));
 const installer = __importStar(__nccwpck_require__(8328));
+const fs = __importStar(__nccwpck_require__(9896));
 const axios_1 = __importStar(__nccwpck_require__(7269));
-function validateSubscription() {
-    var _a;
-    return __awaiter(this, void 0, void 0, function* () {
-        const API_URL = `https://agent.api.stepsecurity.io/v1/github/${process.env.GITHUB_REPOSITORY}/actions/subscription`;
-        try {
-            yield axios_1.default.get(API_URL, { timeout: 3000 });
+async function validateSubscription() {
+    const eventPath = process.env.GITHUB_EVENT_PATH;
+    let repoPrivate;
+    if (eventPath && fs.existsSync(eventPath)) {
+        const eventData = JSON.parse(fs.readFileSync(eventPath, "utf8"));
+        repoPrivate = eventData?.repository?.private;
+    }
+    const upstream = "arduino/setup-protoc";
+    const action = process.env.GITHUB_ACTION_REPOSITORY;
+    const docsUrl = "https://docs.stepsecurity.io/actions/stepsecurity-maintained-actions";
+    core.info("");
+    core.info("[1;36mStepSecurity Maintained Action[0m");
+    core.info(`Secure drop-in replacement for ${upstream}`);
+    if (repoPrivate === false)
+        core.info("[32m✓ Free for public repositories[0m");
+    core.info(`[36mLearn more:[0m ${docsUrl}`);
+    core.info("");
+    if (repoPrivate === false)
+        return;
+    const serverUrl = process.env.GITHUB_SERVER_URL || "https://github.com";
+    const body = { action: action || "" };
+    if (serverUrl !== "https://github.com")
+        body.ghes_server = serverUrl;
+    try {
+        await axios_1.default.post(`https://agent.api.stepsecurity.io/v1/github/${process.env.GITHUB_REPOSITORY}/actions/maintained-actions-subscription`, body, { timeout: 3000 });
+    }
+    catch (error) {
+        if ((0, axios_1.isAxiosError)(error) && error.response?.status === 403) {
+            core.error(`[1;31mThis action requires a StepSecurity subscription for private repositories.[0m`);
+            core.error(`[31mLearn how to enable a subscription: ${docsUrl}[0m`);
+            process.exit(1);
         }
-        catch (error) {
-            if ((0, axios_1.isAxiosError)(error) && ((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) === 403) {
-                core.error("Subscription is not valid. Reach out to support@stepsecurity.io");
-                process.exit(1);
-            }
-            else {
-                core.info("Timeout or API not reachable. Continuing to next step.");
-            }
-        }
-    });
+        core.info("Timeout or API not reachable. Continuing to next step.");
+    }
 }
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield validateSubscription();
-            const version = core.getInput("version");
-            const includePreReleases = convertToBoolean(core.getInput("include-pre-releases"));
-            const repoToken = core.getInput("repo-token");
-            yield installer.getProtoc(version, includePreReleases, repoToken);
-        }
-        catch (error) {
-            core.setFailed(`${error}`);
-        }
-    });
+async function run() {
+    try {
+        await validateSubscription();
+        const version = core.getInput("version");
+        const includePreReleases = convertToBoolean(core.getInput("include-pre-releases"));
+        const repoToken = core.getInput("repo-token");
+        await installer.getProtoc(version, includePreReleases, repoToken);
+    }
+    catch (error) {
+        core.setFailed(`${error}`);
+    }
 }
 run();
 function convertToBoolean(input) {
