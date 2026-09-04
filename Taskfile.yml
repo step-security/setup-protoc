@@ -174,6 +174,14 @@ tasks:
       STYLELINTRC_SCHEMA_URL: https://json.schemastore.org/stylelintrc.json
       STYLELINTRC_SCHEMA_PATH:
         sh: task utility:mktemp-file TEMPLATE="stylelintrc-schema-XXXXXXXXXX.json"
+      # Source: https://github.com/SchemaStore/schemastore/blob/master/src/schemas/json/madge.json
+      MADGE_SCHEMA_URL: https://json.schemastore.org/madge.json
+      MADGE_SCHEMA_PATH:
+        sh: task utility:mktemp-file TEMPLATE="madge-schema-XXXXXXXXXX.json"
+      # Source: https://github.com/SchemaStore/schemastore/blob/master/src/schemas/json/quikrun.json
+      QUIKRUN_SCHEMA_URL: https://www.schemastore.org/quikrun.json
+      QUIKRUN_SCHEMA_PATH:
+        sh: task utility:mktemp-file TEMPLATE="quikrun-schema-XXXXXXXXXX.json"
       INSTANCE_PATH: >-
         {{default "." .PROJECT_PATH}}/package.json
       PROJECT_FOLDER:
@@ -192,6 +200,8 @@ tasks:
       - wget --quiet --output-document="{{.PRETTIERRC_SCHEMA_PATH}}" {{.PRETTIERRC_SCHEMA_URL}}
       - wget --quiet --output-document="{{.SEMANTIC_RELEASE_SCHEMA_PATH}}" {{.SEMANTIC_RELEASE_SCHEMA_URL}}
       - wget --quiet --output-document="{{.STYLELINTRC_SCHEMA_PATH}}" {{.STYLELINTRC_SCHEMA_URL}}
+      - wget --quiet --output-document="{{.MADGE_SCHEMA_PATH}}" {{.MADGE_SCHEMA_URL}}
+      - wget --quiet --output-document="{{.QUIKRUN_SCHEMA_PATH}}" {{.QUIKRUN_SCHEMA_URL}}
       - |
         cd "{{.WORKING_FOLDER}}"  # Workaround for https://github.com/npm/cli/issues/3210
         npx ajv-cli@{{.SCHEMA_DRAFT_4_AJV_CLI_VERSION}} validate \
@@ -207,6 +217,8 @@ tasks:
           -r "{{.PRETTIERRC_SCHEMA_PATH}}" \
           -r "{{.SEMANTIC_RELEASE_SCHEMA_PATH}}" \
           -r "{{.STYLELINTRC_SCHEMA_PATH}}" \
+          -r "{{.MADGE_SCHEMA_PATH}}" \
+          -r "{{.QUIKRUN_SCHEMA_PATH}}" \
           -d "{{.PROJECT_FOLDER}}/{{.INSTANCE_PATH}}"
 
   ts:validate:
