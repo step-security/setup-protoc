@@ -1,3 +1,11 @@
 [[IgnoredVulns]]
 id = "GHSA-8gh8-hqwg-xf34"
 reason = "This dependency is being used in a workflow"
+
+[[IgnoredVulns]]
+id = "GHSA-4mjr-xmp4-gh2g"
+reason = "qs.stringify is never called; typed-rest-client only invokes it when queryParameters options are passed, which this action never does"
+
+[[IgnoredVulns]]
+id = "GHSA-x5fp-wj9c-mxmx"
+reason = "qs.stringify is never called; typed-rest-client only invokes it when queryParameters options are passed, which this action never does"
